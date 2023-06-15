@@ -14,7 +14,11 @@ const connection = mysql.createConnection({
       database:'consultas_iub '
 });
 
-app.get('/')
+app.get('/auth', function(request, response){
+  let user = request.body.username;
+  let password = request.body.password;
+
+});
 
 
 
