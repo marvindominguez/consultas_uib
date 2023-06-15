@@ -17,7 +17,7 @@ WebSockets are an alternative to HTTP communication in Web Application, they off
 Step 1: Clone the repo
 
 ```bash
-git clone https://github.com/trulymittal/chat-socket.io.git
+git clone https://github.com/marvindominguez/consultas_uib.git
 ```
 
 Step 2: cd into the cloned repo and run:
@@ -40,7 +40,7 @@ npm start
 
 ## Author
 
-- [**Truly Mittal**](https://trulymittal.com)
+- [**Truly Mittal**](FourCodeDevelopers)
 
 ## Contribute
 
