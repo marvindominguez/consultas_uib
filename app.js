@@ -1,12 +1,13 @@
-const express = require('express')
-const mysql = require('mysql')
-// const express = require('express-session')
+const express = require('express');
+const mysql = require('mysql');
+const session = require('express-session');
 const path = require('path');
 const app = express();
 const bodyParser = require('body-parser');
-const PORT = process.env.PORT || 4000
-const server = app.listen(PORT, () => console.log(`💬 server on port ${PORT}`))
-
+const http = require('http');
+const server = http.createServer(app);
+const io = require('socket.io')(server);
+const PORT = process.env.PORT || 4000;
 
 const connection = mysql.createConnection({
   host: '127.0.0.1',
@@ -15,11 +16,9 @@ const connection = mysql.createConnection({
   database: 'sys-clinica'
 });
 
-
 app.use(bodyParser.urlencoded({ extended: false }));
 
-
-// Index 
+// Ruta de inicio
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -35,17 +34,15 @@ app.get('/index_est', (req, res) => {
 });
 
 
-
-// Login_Est
 app.post('/auth', (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
 
   connection.query('SELECT * FROM usuario WHERE correo = ? AND password = ?', [username, password], (error, results) => {
-    // If there is an issue with the query, output the error
     if (error) {
       console.error('Error al realizar la consulta:', error);
       res.send('Error al realizar la consulta');
+      res.redirect('/')
     } else {
       if (results.length > 0) {
         res.redirect('/index_est')
@@ -56,33 +53,55 @@ app.post('/auth', (req, res) => {
   });
 });
 
+// Obtener datos de usuarios
+app.get('/datos', (req, res) => {
+  connection.query('SELECT * FROM usuario', (error, results) => {
+    if (error) {
+      console.log('Error al extraer los datos de MySQL', error);
+      res.send('Error al extraer los datos de MySQL');
+    } else {
+      res.json(results);
+      console.log(results)
+    }
+  });
+});
 
+// Servir archivos estáticos desde la carpeta "public"
+app.use(express.static(path.join(__dirname, 'public')));
 
-// const io = require('socket.io')(server)
+// Manejar eventos de conexión de socket
+io.on('connection', (socket) => {
+  console.log('Socket conectado:', socket.id);
 
-// app.use(express.static(path.join(__dirname, 'public')))
+  // Evento cuando se recibe un mensaje del cliente
+  socket.on('message', (data) => {
+    const senderId = socket.id;
+    const receiverSocket = findReceiverSocket(senderId);
 
-// let socketsConected = new Set()
+    if (receiverSocket) {
+      receiverSocket.emit('chat-message', data);
+    }
+  });
 
-// io.on('connection', onConnected)
+  // Evento cuando se desconecta el socket
+  socket.on('disconnect', () => {
+    console.log('Socket desconectado:', socket.id);
+  });
+});
 
-// function onConnected(socket) {
-//   console.log('Socket connected', socket.id)
-//   socketsConected.add(socket.id)
-//   io.emit('clients-total', socketsConected.size)
+// Función para encontrar el socket del receptor (el otro cliente)
+function findReceiverSocket(senderId) {
+  const connectedSockets = io.sockets.connected;
 
-//   socket.on('disconnect', () => {
-//     console.log('Socket disconnected', socket.id)
-//     socketsConected.delete(socket.id)
-//     io.emit('clients-total', socketsConected.size)
-//   })
+  for (const socketId in connectedSockets) {
+    if (socketId !== senderId) {
+      return connectedSockets[socketId];
+    }
+  }
 
-//   socket.on('message', (data) => {
-//     // console.log(data)
-//     socket.broadcast.emit('chat-message', data)
-//   })
+  return null;
+}
 
-//   socket.on('feedback', (data) => {
-//     socket.broadcast.emit('feedback', data)
-//   })
-// }
+server.listen(PORT, () => {
+  console.log(`💬 Server running on port ${PORT}`);
+});

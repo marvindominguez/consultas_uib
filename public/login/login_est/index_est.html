@@ -1,12 +1,193 @@
+<!-- Index_est.html -->
+
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            background-color: #ddd;
+        }
+
+        .message-bubble {
+            background-color: #fff;
+            border-radius: 20px;
+            padding: 10px 15px;
+            font-size: 16px;
+            line-height: 1.4;
+            max-width: 250px;
+            word-wrap: break-word;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .mini-chat {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-top: 10px;
+            width: 300px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .active {
+            display: block;
+        }
+
+        #message-container {
+            margin-top: 20px;
+        }
+
+        #message-container div {
+            margin-bottom: 10px;
+        }
+
+        #message-input {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        #send-button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: #fff;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+    </style>
 </head>
+
 <body>
     <h1>Welcome</h1>
-    
+    <ul id="user-list"></ul>
+    <div id="mini-chat" class="mini-chat">
+        <h2 id="chat-heading"></h2>
+        <div id="message-container"></div>
+        <input type="text" id="message-input" placeholder="Type a message">
+        <button id="send-button">Send</button>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Después de que el usuario haya iniciado sesión
+        const userId = obtenerIdUsuario(); // Obtén el ID de usuario del usuario actual
+        
+        socket.emit('login', userId);
+    </script>
+    <script>
+        const miniChat = document.getElementById('mini-chat');
+        const chatHeading = document.getElementById('chat-heading');
+        const messageContainer = document.getElementById('message-container');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const socket = io();
+
+        function showMiniChat(nombre) {
+            chatHeading.textContent = `Chat with: ${nombre}`;
+            miniChat.classList.add('active');
+        }
+
+        function hideMiniChat() {
+            chatHeading.textContent = '';
+            miniChat.classList.remove('active');
+        }
+
+        function sendMessage() {
+            const message = messageInput.value;
+            socket.emit('message', message);
+            messageInput.value = '';
+        }
+
+        socket.on('chat-message', (data) => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message-bubble');
+            messageElement.textContent = data;
+            messageContainer.appendChild(messageElement);
+        });
+
+        fetch('/datos')
+            .then(response => response.json())
+            .then(data => {
+                const userList = document.getElementById('user-list');
+                data.forEach(user => {
+                    const listItem = document.createElement('li');
+                    const userAvatar = document.createElement('div');
+                    userAvatar.classList.add('user-avatar');
+                    const messageBubble = document.createElement('div');
+                    messageBubble.classList.add('message-bubble');
+                    messageBubble.textContent = `${user.nombre} ${user.apellido}`;
+
+                    listItem.addEventListener('click', () => {
+                        if (miniChat.classList.contains('active')) {
+                            hideMiniChat();
+                        } else {
+                            showMiniChat(`${user.nombre} ${user.apellido}`);
+                        }
+                    });
+
+                    listItem.appendChild(userAvatar);
+                    listItem.appendChild(messageBubble);
+                    userList.appendChild(listItem);
+                });
+
+            })
+            .catch(error => console.log('Error al extraer los datos', error));
+
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+    </script>
+
 </body>
+
 </html>
