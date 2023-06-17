@@ -29,7 +29,7 @@ app.get('/auth', function(request, response){
 				// Redirect to home page
 				response.redirect('/home');
 			} else {
-				response.send('Usuario y/o Contraseña Incorrecta');
+				response.send('Usuario y/o Contraseña Incorrecta!');
 			}			
 			response.end();
 		});
