@@ -23,17 +23,28 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-//Login
+//Login For All
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login', 'login_est', 'login.html'));
+  res.sendFile(path.join(__dirname, 'public', 'login', 'login.html'));
 });
 
-// Index_Est
+//Index Admin
+app.get('/index_admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login','admin', 'index_admin.html'));
+});
+
+// Index Profesor
+app.get('/index_profesor', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login', 'profesor','index_profesor.html'));
+});
+
+// Index Estudiante
 app.get('/index_est', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login', 'login_est', 'index_est.html'));
+  res.sendFile(path.join(__dirname, 'public', 'login', 'estudiante', 'index_est.html'));
 });
 
 
+//Comprobación del login
 app.post('/auth', (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
@@ -45,8 +56,19 @@ app.post('/auth', (req, res) => {
       res.redirect('/')
     } else {
       if (results.length > 0) {
-        res.redirect('/index_est')
+        const user = results[0];
+        const tipo = user.tipo;
+        if (tipo === 1) {
+          res.redirect('/index_admin');
+        } else if (tipo === 2) {
+          res.redirect('/index_profesor');
+        } else if (tipo === 3) {
+          res.redirect('/index_est');
+        } else {
+          res.redirect('/login');
+        }
       } else {
+        // Si no se encuentra el registro en la base de datos...
         res.redirect('/login');
       }
     }
@@ -69,6 +91,7 @@ app.get('/datos', (req, res) => {
 // Servir archivos estáticos desde la carpeta "public"
 app.use(express.static(path.join(__dirname, 'public')));
 
+
 // Manejar eventos de conexión de socket
 io.on('connection', (socket) => {
   console.log('Socket conectado:', socket.id);
@@ -82,6 +105,7 @@ io.on('connection', (socket) => {
       receiverSocket.emit('chat-message', data);
     }
   });
+
 
   // Evento cuando se desconecta el socket
   socket.on('disconnect', () => {
@@ -103,5 +127,5 @@ function findReceiverSocket(senderId) {
 }
 
 server.listen(PORT, () => {
-  console.log(`💬 Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
